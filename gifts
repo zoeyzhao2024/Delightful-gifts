@@ -1,0 +1,67 @@
+import streamlit as st
+import random
+
+# 设置页面
+st.set_page_config(page_title="❤️ 情侣专属互抽小游戏", layout="centered")
+
+# 定义档位名称
+LEVELS = [
+    "开心五极限 (最小奖)", 
+    "事事肆如意 (四等奖)", 
+    "闪闪三生石 (三等奖)", 
+    "对影成双人 (二等奖)", 
+    "依心一意赏 (最大奖)"
+]
+
+# 初始化全局数据
+if 'pools' not in st.session_state:
+    st.session_state.pools = {
+        "玩家A": {level: [] for level in LEVELS},
+        "玩家B": {level: [] for level in LEVELS}
+    }
+
+st.title("🎁 情侣互抽愿望机")
+
+# --- 第一步：设置环节 ---
+with st.expander("🛠 第一步：编辑各自的许愿池 (建议轮流操作，不要偷看！)", expanded=True):
+    user_choice = st.radio("请选择你是谁：", ["玩家A", "玩家B"], horizontal=True)
+    st.warning(f"请 {user_choice} 输入你的愿望，确保对方不在身边哦！")
+    
+    for level in LEVELS:
+        current_val = "\n".join(st.session_state.pools[user_choice][level])
+        new_val = st.text_area(f"编辑你的【{level}】愿望 (每行一个):", value=current_val, key=f"input_{user_choice}_{level}")
+        st.session_state.pools[user_choice][level] = [p.strip() for p in new_val.split("\n") if p.strip()]
+    
+    st.success(f"✅ {user_choice} 的愿望池已保存")
+
+st.write("---")
+
+# --- 第二步：抽奖环节 ---
+st.header("✨ 第二步：抽取对方的愿望")
+
+current_roller = st.radio("现在是谁在抽奖？", ["玩家A", "玩家B"], horizontal=True, key="roller")
+target_user = "玩家B" if current_roller == "玩家A" else "玩家A"
+
+st.info(f"当前操作者：{current_roller} | 正在抽取：{target_user} 的许愿池")
+
+selected_level = st.selectbox("🎯 想要挑战哪个档位？", LEVELS)
+
+if st.button(f"🎲 抽取 {target_user} 的愿望"):
+    target_pool = st.session_state.pools[target_user][selected_level]
+    
+    if not target_pool:
+        st.error(f"哎呀，{target_user} 还没有在【{selected_level}】里写愿望呢！")
+    else:
+        with st.spinner('命运转轮拨动中...'):
+            import time
+            time.sleep(1.2)
+            result = random.choice(target_pool)
+            st.balloons()
+            st.markdown(f"### 🎉 恭喜 {current_roller}！")
+            st.markdown(f"你抽中了 {target_user} 的奖品：")
+            st.subheader(f"【{result}】")
+            st.caption(f"（档位：{selected_level}）")
+
+# 页脚提示
+st.markdown("---")
+st.caption("🔒 提示：这是一个本地临时程序，刷新浏览器页面会导致愿望池清空。建议填好后直接开始抽奖！")
